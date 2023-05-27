@@ -10,7 +10,6 @@ import datetime
 
 
 class GameEvent(models.Model):
-    id = models.IntegerField(primary_key=True)
     time = models.DateTimeField(null=False)
     level_of_game = models.IntegerField(choices=Rating.choices, blank=True)
     min_number_of_players = models.PositiveIntegerField()
@@ -31,6 +30,7 @@ class GameEvent(models.Model):
                                max_number_of_players=max_number_of_players,
                                court=court,
                                ball_game=ball_game)
+
         game_event.save()
         return game_event
 
@@ -51,3 +51,15 @@ class GameEvent(models.Model):
     @staticmethod
     def is_ball_game_playable_at_court(court, ball_game):
         return CourtBallGame.is_ball_game_playable(court, ball_game)
+
+    def create_with_admin(self, player, ball_responsible):
+        from game_event_player.models import GameEventPlayer
+        GameEventPlayer(game_event=self, player=player, ball_responsible=False).save()
+
+    def delete_game_event(self):
+        deleted = False
+        from game_event_player.models import GameEventPlayer
+        if not GameEventPlayer.objects.filter(game_event=self).exists():
+            self.delete()
+            deleted = True
+        return deleted

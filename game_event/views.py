@@ -32,7 +32,10 @@ def process_game_event_form(request):
         ball_game = request.POST.get('ball_game')
 
         try:
-            GameEvent.create(time, level_of_game, min_number_of_players, max_number_of_players, court, ball_game)
+            player = Player.objects.get(user=request.user)
+            event = GameEvent.create(time, level_of_game, min_number_of_players,
+                                     max_number_of_players, court, ball_game)
+            GameEvent.create_with_admin(event, player, False)
         except ValidationError as e:
             error_messages = e.messages[0].split("\n")
             for error in error_messages:
@@ -127,7 +130,8 @@ def remove_from_event(request, id):
         return render(request, 'game_event/result.html', {'event_exists': False})
     player = Player.objects.get(user=request.user)
     GameEventPlayer.objects.get(game_event=event, player=player).delete()
-    return render(request, 'game_event/result.html', {'event_exists': True})
+    event_exists = event.delete_game_event()
+    return render(request, 'game_event/result.html', {'event_exists': event_exists})
 
 
 def process_answer_game_event(request, id):
